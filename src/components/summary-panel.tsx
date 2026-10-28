@@ -19,10 +19,10 @@ interface SummaryPanelProps {
 }
 
 const TEMPLATES = [
-  { id: 'general', label: 'General' },
-  { id: 'sales', label: 'Sales (BANT)' },
-  { id: 'engineering', label: 'Engineering' },
-  { id: '1on1', label: '1-on-1' },
+  { id: 'general', label: 'General', icon: '📋' },
+  { id: 'sales', label: 'Sales', icon: '💼' },
+  { id: 'engineering', label: 'Engineering', icon: '⚙️' },
+  { id: '1on1', label: '1-on-1', icon: '👤' },
 ]
 
 export function SummaryPanel({ meetingId, summary, onSummaryUpdate }: SummaryPanelProps) {
@@ -55,126 +55,152 @@ export function SummaryPanel({ meetingId, summary, onSummaryUpdate }: SummaryPan
 
   function handleCopy() {
     if (!summary) return
-    const text = `MEETING SUMMARY: ${summary.template.toUpperCase()}
-OVERVIEW:
-${summary.overview}
-
-KEY POINTS:
-${summary.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}
-
-DECISIONS:
-${summary.decisions.map((d) => `- ${d}`).join('\n')}
-
-NEXT STEPS:
-${summary.nextSteps.map((s) => `→ ${s}`).join('\n')}
-`
+    const text = `MEETING SUMMARY — ${summary.template.toUpperCase()}\n\nOVERVIEW:\n${summary.overview}\n\nKEY POINTS:\n${summary.keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}\n\nDECISIONS:\n${summary.decisions.map(d => `• ${d}`).join('\n')}\n\nNEXT STEPS:\n${summary.nextSteps.map(s => `→ ${s}`).join('\n')}`
     navigator.clipboard.writeText(text)
     setCopied(true)
     toast.success('Summary copied to clipboard!')
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const sectionStyle = {
+    background: 'rgba(8, 12, 20, 0.7)',
+    border: '1px solid rgba(30, 37, 53, 0.8)',
+    borderRadius: 12,
+    padding: '14px',
+  }
+
   if (!summary) {
     return (
-      <div className="text-center py-12 text-gray-400">
-        <div className="text-4xl mb-3">✨</div>
-        <h3 className="font-bold text-white mb-1">No summary generated</h3>
-        <p className="text-xs text-gray-400 mb-6">Choose a template and generate with Claude AI.</p>
-        <button
-          onClick={handleRegenerate}
-          disabled={regenerating}
-          className="bg-[#00b4d8] hover:bg-[#0096c7] text-black font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg"
-        >
-          {regenerating ? 'Analyzing with Claude...' : 'Generate with Claude AI 🤖'}
+      <div className="flex flex-col items-center justify-center h-full py-16 px-6 text-center">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-5 animate-float"
+          style={{ background: 'linear-gradient(135deg, rgba(0,180,216,0.15), rgba(124,58,237,0.1))', border: '1px solid rgba(0,180,216,0.2)' }}>
+          ✨
+        </div>
+        <h3 className="font-bold text-white text-sm mb-2">No summary yet</h3>
+        <p className="text-xs text-[#4a5568] mb-6 leading-relaxed max-w-[220px]">
+          Choose a template below and generate an AI summary powered by Claude.
+        </p>
+        {/* Template selector */}
+        <div className="flex flex-wrap gap-1.5 justify-center mb-5">
+          {TEMPLATES.map(t => (
+            <button key={t.id} onClick={() => setActiveTemplate(t.id)}
+              className="flex items-center gap-1 text-[11px] font-semibold px-3 py-1.5 rounded-xl transition-all duration-200"
+              style={{
+                background: activeTemplate === t.id ? 'linear-gradient(135deg, #00b4d8, #0096c7)' : 'rgba(17,22,32,0.8)',
+                border: `1px solid ${activeTemplate === t.id ? 'transparent' : 'rgba(30,37,53,0.8)'}`,
+                color: activeTemplate === t.id ? '#000' : '#8b9ab2',
+              }}>
+              <span>{t.icon}</span><span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+        <button onClick={handleRegenerate} disabled={regenerating}
+          className="btn-primary px-6 py-2.5 text-xs font-bold rounded-xl flex items-center gap-2 disabled:opacity-60">
+          {regenerating ? (
+            <><svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg><span>Analyzing...</span></>
+          ) : (
+            <><span>🤖</span><span>Generate with Claude AI</span></>
+          )}
         </button>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 text-white text-xs">
-      {/* Template Switcher & Copy Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-[#21262d]">
-        <div className="flex gap-1 bg-[#0d1117] border border-[#21262d] p-1 rounded-lg">
+    <div className="space-y-4 text-xs p-4">
+      {/* Template switcher + actions */}
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-4"
+        style={{ borderBottom: '1px solid rgba(30,37,53,0.6)' }}>
+        <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'rgba(8,12,20,0.8)', border: '1px solid rgba(30,37,53,0.6)' }}>
           {TEMPLATES.map((t) => (
             <button
               key={t.id}
               onClick={() => setActiveTemplate(t.id)}
-              className={`text-[11px] font-medium px-2.5 py-1 rounded transition-colors ${
-                activeTemplate === t.id
-                  ? 'bg-[#00b4d8] text-black font-bold'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200"
+              style={{
+                background: activeTemplate === t.id ? 'linear-gradient(135deg, #00b4d8, #0096c7)' : 'transparent',
+                color: activeTemplate === t.id ? '#000' : '#8b9ab2',
+                boxShadow: activeTemplate === t.id ? '0 0 10px rgba(0,180,216,0.3)' : 'none',
+              }}
             >
-              {t.label}
+              <span className="text-[10px]">{t.icon}</span>
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopy}
-            className="bg-[#161b22] hover:bg-[#21262d] border border-[#30363d] text-gray-300 px-2.5 py-1.5 rounded-lg flex items-center gap-1"
-          >
+        <div className="flex items-center gap-1.5">
+          <button onClick={handleCopy}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+            style={{
+              background: copied ? 'rgba(16,185,129,0.12)' : 'rgba(17,22,32,0.8)',
+              border: `1px solid ${copied ? 'rgba(16,185,129,0.3)' : 'rgba(30,37,53,0.8)'}`,
+              color: copied ? '#10b981' : '#8b9ab2',
+            }}>
             <span>{copied ? '✓' : '📋'}</span>
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+            <span>{copied ? 'Copied!' : 'Copy'}</span>
           </button>
 
-          <button
-            onClick={handleRegenerate}
-            disabled={regenerating}
-            className="bg-[#00b4d8]/20 hover:bg-[#00b4d8]/30 border border-[#00b4d8]/50 text-[#00b4d8] px-2.5 py-1.5 rounded-lg flex items-center gap-1 font-semibold"
-          >
-            <span>{regenerating ? '⏳' : '⚡'}</span>
-            <span>{regenerating ? 'Regenerating...' : 'AI Switch'}</span>
+          <button onClick={handleRegenerate} disabled={regenerating}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold transition-all"
+            style={{
+              background: 'rgba(0,180,216,0.1)',
+              border: '1px solid rgba(0,180,216,0.25)',
+              color: '#00b4d8',
+              opacity: regenerating ? 0.6 : 1,
+            }}>
+            {regenerating
+              ? <><svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg><span>Regenerating...</span></>
+              : <><span>⚡</span><span>Regenerate</span></>
+            }
           </button>
         </div>
       </div>
 
-      {/* Overview Card */}
-      <div className="bg-[#0d1117] border border-[#21262d] rounded-xl p-4">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
-          Executive Overview
-        </h4>
-        <p className="text-gray-200 leading-relaxed text-xs">{summary.overview}</p>
+      {/* Overview */}
+      <div style={sectionStyle}>
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-widest">Executive Overview</span>
+        </div>
+        <p className="text-[#c8d8e8] leading-relaxed">{summary.overview}</p>
       </div>
 
       {/* Key Points */}
       {summary.keyPoints?.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">
-            Key Discussion Points
-          </h4>
-          <ul className="space-y-2">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-widest">Key Discussion Points</span>
+          </div>
+          <ul className="space-y-1.5">
             {summary.keyPoints.map((point, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2.5 bg-[#0d1117] border border-[#21262d] p-3 rounded-lg"
-              >
-                <span className="w-5 h-5 rounded-full bg-[#00b4d8]/20 text-[#00b4d8] flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">
+              <li key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl animate-fade-up"
+                style={{ ...sectionStyle, animationDelay: `${i * 50}ms` }}>
+                <span className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5"
+                  style={{ background: 'rgba(0,180,216,0.15)', color: '#00b4d8', border: '1px solid rgba(0,180,216,0.2)' }}>
                   {i + 1}
                 </span>
-                <span className="text-gray-300 leading-relaxed">{point}</span>
+                <span className="text-[#c8d8e8] leading-relaxed">{point}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Decisions Made */}
+      {/* Decisions */}
       {summary.decisions?.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">
-            Decisions Made
-          </h4>
-          <ul className="space-y-2">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-widest">Decisions Made</span>
+          </div>
+          <ul className="space-y-1.5">
             {summary.decisions.map((decision, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2.5 bg-[#0d1117] border border-[#21262d] p-3 rounded-lg"
-              >
-                <span className="text-emerald-400 text-sm flex-shrink-0">✓</span>
-                <span className="text-gray-200 leading-relaxed">{decision}</span>
+              <li key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl"
+                style={sectionStyle}>
+                <span className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black"
+                  style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  ✓
+                </span>
+                <span className="text-[#c8d8e8] leading-relaxed">{decision}</span>
               </li>
             ))}
           </ul>
@@ -184,22 +210,22 @@ ${summary.nextSteps.map((s) => `→ ${s}`).join('\n')}
       {/* Next Steps */}
       {summary.nextSteps?.length > 0 && (
         <div>
-          <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2.5">
-            Next Steps
-          </h4>
-          <ul className="space-y-2">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[9px] font-black text-[#4a5568] uppercase tracking-widest">Next Steps</span>
+          </div>
+          <ul className="space-y-1.5">
             {summary.nextSteps.map((step, i) => (
-              <li
-                key={i}
-                className="flex items-start gap-2.5 bg-[#0d1117] border border-[#21262d] p-3 rounded-lg"
-              >
-                <span className="text-[#00b4d8] text-sm flex-shrink-0">➔</span>
-                <span className="text-gray-200 leading-relaxed">{step}</span>
+              <li key={i} className="flex items-start gap-2.5 p-2.5 rounded-xl"
+                style={sectionStyle}>
+                <span className="flex-shrink-0 text-[#00b4d8] font-bold">→</span>
+                <span className="text-[#c8d8e8] leading-relaxed">{step}</span>
               </li>
             ))}
           </ul>
         </div>
       )}
+
+      <p className="text-center text-[9px] text-[#4a5568] pt-2">Powered by Claude 3 Haiku · Anthropic</p>
     </div>
   )
 }

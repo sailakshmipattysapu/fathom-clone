@@ -86,8 +86,14 @@ export default function MeetingDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0b0e14] text-white flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#00b4d8] border-t-transparent animate-spin" />
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--bg-base)' }}
+      >
+        <div
+          className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: 'var(--cyan)', borderTopColor: 'transparent' }}
+        />
       </div>
     )
   }
@@ -95,49 +101,106 @@ export default function MeetingDetailPage() {
   const date = new Date(meeting.date)
   const duration = meeting.duration || 180
 
+  const tabs: { id: Tab; label: string; count?: number }[] = [
+    { id: 'summary', label: 'Summary' },
+    { id: 'actions', label: 'Actions', count: meeting.actionItems?.length || 0 },
+    { id: 'highlights', label: 'Highlights', count: meeting.highlights?.length || 0 },
+  ]
+
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-white flex flex-col font-sans">
+    <div
+      className="min-h-screen text-white flex flex-col font-sans"
+      style={{ background: 'var(--bg-base)' }}
+    >
       <FathomHeader activeTab="My Calls" />
 
-      {/* Breadcrumb & Meeting Top Bar */}
-      <div className="px-6 py-3.5 bg-[#12161f] border-b border-[#21262d] flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* ── Premium Header Bar ── */}
+      <div
+        className="px-5 py-3 flex items-center justify-between gap-4"
+        style={{
+          background: 'linear-gradient(180deg, rgba(17,22,32,0.98) 0%, rgba(12,16,24,0.95) 100%)',
+          borderBottom: '1px solid var(--border-subtle)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
+        {/* Left: breadcrumb + title */}
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Back button */}
           <Link
             href="/dashboard"
-            className="text-xs text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 shrink-0"
+            style={{
+              color: 'var(--text-secondary)',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid var(--border-subtle)',
+            }}
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-primary)'
+              ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-default)'
+              ;(e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.07)'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)'
+              ;(e.currentTarget as HTMLAnchorElement).style.borderColor = 'var(--border-subtle)'
+              ;(e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'
+            }}
           >
             <span>←</span>
             <span>All Calls</span>
           </Link>
-          <span className="text-gray-600">/</span>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">{platformIcon(meeting.platform)}</span>
-            <h1 className="text-sm sm:text-base font-bold text-white truncate max-w-md">
+
+          <span style={{ color: 'var(--border-default)' }}>/</span>
+
+          {/* Platform icon + meeting title */}
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-base shrink-0">{platformIcon(meeting.platform)}</span>
+            <h1
+              className="text-sm sm:text-base font-bold truncate"
+              style={{
+                background: 'linear-gradient(135deg, #e8edf5 0%, #8b9ab2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
               {meeting.title}
             </h1>
           </div>
-          <span className="text-[11px] bg-[#21262d] text-gray-300 px-2 py-0.5 rounded font-mono">
-            {formatDuration(duration)}
-          </span>
+
+          {/* Metadata badges */}
+          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+            <span className="badge badge-cyan">{formatDuration(duration)}</span>
+            <span
+              className="badge"
+              style={{
+                background: 'rgba(255,255,255,0.05)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              {formatDate(date)}
+            </span>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowShareModal(true)}
-            className="bg-[#00b4d8] hover:bg-[#0096c7] text-black font-bold text-xs px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all shadow-md"
-          >
-            <span>🔗</span>
-            <span>Share Clip</span>
-          </button>
-        </div>
+        {/* Right: share button */}
+        <button
+          onClick={() => setShowShareModal(true)}
+          className="btn-primary text-xs px-4 py-2 flex items-center gap-2 shrink-0"
+        >
+          <span>🔗</span>
+          <span>Share Clip</span>
+        </button>
       </div>
 
-      {/* Main Split Layout: Left (Player + Transcript) & Right (Summary + Actions + Highlights) */}
+      {/* ── Main Split Layout ── */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Column: Player & Transcript */}
-        <div className="flex-[3] flex flex-col border-r border-[#21262d] overflow-hidden min-h-[400px]">
-          {/* Custom Video Player / Waveform visualizer */}
+
+        {/* Left Column: Player + Transcript */}
+        <div
+          className="flex-[3] flex flex-col overflow-hidden min-h-[400px] animate-fade-up"
+          style={{ borderRight: '1px solid var(--border-subtle)' }}
+        >
           <VideoPlayer
             videoUrl={meeting.videoUrl}
             title={meeting.title}
@@ -150,7 +213,6 @@ export default function MeetingDetailPage() {
             onAddHighlight={handleAddHighlightFromPlayer}
           />
 
-          {/* Transcript Viewer */}
           <div className="flex-1 overflow-y-auto">
             <TranscriptViewer
               segments={meeting.transcript || []}
@@ -167,108 +229,188 @@ export default function MeetingDetailPage() {
           </div>
         </div>
 
-        {/* Right Column: Tabbed Intelligence Drawer */}
-        <div className="flex-[2] flex flex-col bg-[#12161f] overflow-hidden min-w-[320px]">
-          {/* Tabs */}
-          <div className="flex border-b border-[#21262d] bg-[#0d1117] text-xs">
-            <button
-              onClick={() => setActiveTab('summary')}
-              className={`flex-1 py-3 text-center font-bold transition-colors border-b-2 ${
-                activeTab === 'summary'
-                  ? 'border-[#00b4d8] text-[#00b4d8] bg-[#12161f]'
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
+        {/* Right Column: Tabbed Intelligence Panel */}
+        <div
+          className="flex-[2] flex flex-col overflow-hidden min-w-[320px] animate-fade-up delay-75"
+          style={{ background: 'var(--bg-surface)' }}
+        >
+          {/* Pill Tab Switcher */}
+          <div
+            className="p-3 shrink-0"
+            style={{
+              background: 'rgba(6,10,16,0.6)',
+              borderBottom: '1px solid var(--border-subtle)',
+            }}
+          >
+            <div
+              className="flex rounded-xl p-1 gap-1"
+              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)' }}
             >
-              Summary
-            </button>
-            <button
-              onClick={() => setActiveTab('actions')}
-              className={`flex-1 py-3 text-center font-bold transition-colors border-b-2 flex items-center justify-center gap-1.5 ${
-                activeTab === 'actions'
-                  ? 'border-[#00b4d8] text-[#00b4d8] bg-[#12161f]'
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              <span>Actions</span>
-              <span className="bg-[#21262d] text-gray-300 text-[10px] px-1.5 py-0.2 rounded-full">
-                {meeting.actionItems?.length || 0}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('highlights')}
-              className={`flex-1 py-3 text-center font-bold transition-colors border-b-2 flex items-center justify-center gap-1.5 ${
-                activeTab === 'highlights'
-                  ? 'border-[#00b4d8] text-[#00b4d8] bg-[#12161f]'
-                  : 'border-transparent text-gray-400 hover:text-white'
-              }`}
-            >
-              <span>Highlights</span>
-              <span className="bg-[#21262d] text-gray-300 text-[10px] px-1.5 py-0.2 rounded-full">
-                {meeting.highlights?.length || 0}
-              </span>
-            </button>
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200"
+                    style={
+                      isActive
+                        ? {
+                            background: 'var(--gradient-brand)',
+                            color: '#000',
+                            boxShadow: 'var(--shadow-cyan)',
+                          }
+                        : {
+                            color: 'var(--text-secondary)',
+                            background: 'transparent',
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (!isActive)
+                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-primary)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive)
+                        (e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                    }}
+                  >
+                    <span>{tab.label}</span>
+                    {tab.count !== undefined && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                        style={
+                          isActive
+                            ? { background: 'rgba(0,0,0,0.25)', color: '#000' }
+                            : { background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }
+                        }
+                      >
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          {/* Tab Content Panel */}
+          {/* Tab Content */}
           <div className="flex-1 overflow-y-auto p-5">
             {activeTab === 'summary' && (
-              <SummaryPanel
-                meetingId={idStr}
-                summary={meeting.summary}
-                onSummaryUpdate={handleSummaryUpdate}
-              />
+              <div className="animate-fade-up">
+                <SummaryPanel
+                  meetingId={idStr}
+                  summary={meeting.summary}
+                  onSummaryUpdate={handleSummaryUpdate}
+                />
+              </div>
             )}
             {activeTab === 'actions' && (
-              <ActionItemsPanel
-                items={meeting.actionItems || []}
-                onToggle={handleActionItemToggle}
-              />
+              <div className="animate-fade-up">
+                <ActionItemsPanel
+                  items={meeting.actionItems || []}
+                  onToggle={handleActionItemToggle}
+                />
+              </div>
             )}
             {activeTab === 'highlights' && (
-              <HighlightsPanel
-                highlights={meeting.highlights || []}
-                onSeek={handleSeek}
-              />
+              <div className="animate-fade-up">
+                <HighlightsPanel
+                  highlights={meeting.highlights || []}
+                  onSeek={handleSeek}
+                />
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Share Clip Modal */}
+      {/* ── Share Clip Modal (glassmorphism) ── */}
       {showShareModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-2xl max-w-md w-full p-6 text-white relative shadow-2xl">
+        <div
+          className="modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowShareModal(false)
+          }}
+        >
+          <div
+            className="animate-scale-in rounded-2xl max-w-md w-full p-6 relative"
+            style={{
+              background: 'rgba(17,22,32,0.95)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1px solid rgba(0,180,216,0.2)',
+              boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,180,216,0.08)',
+            }}
+          >
+            {/* Close */}
             <button
               onClick={() => setShowShareModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all duration-200"
+              style={{ color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.05)' }}
+              onMouseEnter={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'white'
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)'
+              }}
+              onMouseLeave={(e) => {
+                ;(e.currentTarget as HTMLButtonElement).style.color = 'var(--text-secondary)'
+                ;(e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)'
+              }}
             >
               ✕
             </button>
-            <div className="text-3xl mb-2">🔗</div>
-            <h3 className="text-lg font-bold mb-1">Share Meeting Clip</h3>
-            <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-              Anyone with this link can view the recording, synchronized transcript, and AI summary without needing a Fathom account.
+
+            {/* Icon */}
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4"
+              style={{ background: 'var(--gradient-brand)', boxShadow: 'var(--shadow-cyan)' }}
+            >
+              🔗
+            </div>
+
+            <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+              Share Meeting Clip
+            </h3>
+            <p className="text-xs mb-5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              Anyone with this link can view the recording, synchronized transcript, and AI summary — no Fathom account needed.
             </p>
 
-            <div className="bg-[#0d1117] border border-[#30363d] p-2.5 rounded-xl flex items-center gap-2 mb-4">
+            {/* Link input row */}
+            <div
+              className="flex items-center gap-2 p-2 rounded-xl mb-4"
+              style={{
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid var(--border-default)',
+              }}
+            >
               <input
                 readOnly
                 value={`https://fathom.video/share/${meeting.id || idStr}`}
-                className="bg-transparent text-xs text-gray-300 w-full focus:outline-none"
+                className="bg-transparent text-xs flex-1 focus:outline-none"
+                style={{ color: 'var(--text-secondary)' }}
               />
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(`https://fathom.video/share/${meeting.id || idStr}`)
+                  navigator.clipboard.writeText(
+                    `https://fathom.video/share/${meeting.id || idStr}`
+                  )
                   toast.success('Public share link copied!')
                   setShowShareModal(false)
                 }}
-                className="bg-[#00b4d8] text-black font-bold text-xs px-3.5 py-1.5 rounded-lg flex-shrink-0"
+                className="btn-primary text-xs px-4 py-1.5 shrink-0"
               >
                 Copy
               </button>
             </div>
 
-            <div className="text-[11px] text-gray-400 space-y-1.5">
+            {/* Permissions info */}
+            <div
+              className="rounded-xl p-3 space-y-1.5 text-[11px]"
+              style={{
+                background: 'rgba(0,180,216,0.05)',
+                border: '1px solid rgba(0,180,216,0.15)',
+                color: 'var(--text-secondary)',
+              }}
+            >
               <p>✓ Viewer permissions: View only</p>
               <p>✓ Privacy: Attendee consent verified</p>
             </div>

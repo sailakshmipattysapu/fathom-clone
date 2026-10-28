@@ -65,55 +65,77 @@ export function OnboardingTutorialModal({
   const slide = slides[currentSlide]
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-[#12161f] border border-[#30363d] rounded-2xl max-w-xl w-full p-6 text-white relative shadow-2xl">
+    <div className="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4">
+      <div 
+        className="w-full max-w-xl rounded-2xl p-6 sm:p-8 text-white relative shadow-2xl animate-scale-in"
+        style={{
+          background: 'rgba(14, 19, 30, 0.98)',
+          border: '1px solid rgba(30, 37, 53, 0.9)',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.8), 0 0 40px rgba(0,180,216,0.1)',
+        }}
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white p-1 rounded hover:bg-[#21262d]"
+          className="absolute top-4 right-4 w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#111620] transition-all"
         >
           ✕
         </button>
 
         <div className="text-center mb-6">
-          <span className="text-xs uppercase tracking-widest text-[#00b4d8] font-bold">
+          <span className="text-[10px] uppercase tracking-widest text-[#00b4d8] font-black">
             Interactive Product Tour
           </span>
-          <h2 className="text-2xl font-bold mt-1">Learn how to use Fathom</h2>
-          <div className="inline-flex items-center gap-1.5 bg-[#232115] border border-[#635016] text-[#f5c518] px-3 py-1 rounded-full text-xs font-semibold mt-2">
+          <h2 className="text-2xl font-black mt-1">Master Fathom in 60 Seconds</h2>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mt-2"
+            style={{
+              background: 'rgba(35, 33, 21, 0.9)',
+              border: '1px solid rgba(99, 80, 22, 0.6)',
+              color: '#f5c518',
+            }}
+          >
             <span>⭐</span>
             <span>Earn 5 Points upon completion</span>
           </div>
         </div>
 
         {/* Slide Card */}
-        <div className="bg-[#0d1117] border border-[#21262d] rounded-xl p-8 text-center min-h-[220px] flex flex-col items-center justify-center">
-          <div className="text-5xl mb-4 select-none">{slide.graphic}</div>
-          <span className="text-[11px] font-semibold bg-[#161b22] border border-[#30363d] text-[#00b4d8] px-2.5 py-0.5 rounded-full mb-2">
+        <div 
+          className="rounded-2xl p-8 text-center min-h-[220px] flex flex-col items-center justify-center transition-all duration-300"
+          style={{
+            background: 'rgba(8, 12, 20, 0.8)',
+            border: '1px solid rgba(30, 37, 53, 0.8)',
+          }}
+        >
+          <div className="text-5xl mb-4 select-none animate-float">{slide.graphic}</div>
+          <span className="badge badge-cyan mb-3">
             {slide.badge}
           </span>
           <h3 className="text-lg font-bold text-white mb-2">{slide.title}</h3>
-          <p className="text-sm text-gray-400 max-w-md leading-relaxed">{slide.description}</p>
+          <p className="text-xs sm:text-sm text-gray-400 max-w-md leading-relaxed">{slide.description}</p>
         </div>
 
         {/* Slide Indicators */}
-        <div className="flex justify-center items-center gap-1.5 mt-5">
+        <div className="flex justify-center items-center gap-2 mt-6">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrentSlide(i)}
-              className={`h-1.5 rounded-full transition-all ${
-                i === currentSlide ? 'w-6 bg-[#00b4d8]' : 'w-2 bg-[#21262d]'
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === currentSlide ? 'w-8 bg-gradient-to-r from-[#00b4d8] to-[#7c3aed] shadow-[0_0_8px_rgba(0,180,216,0.6)]' : 'w-2 bg-[#21262d]'
               }`}
             />
           ))}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#21262d]">
+        <div 
+          className="flex items-center justify-between mt-6 pt-4"
+          style={{ borderTop: '1px solid rgba(30, 37, 53, 0.6)' }}
+        >
           <button
             onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
             disabled={currentSlide === 0}
-            className="text-xs text-gray-400 hover:text-white disabled:opacity-30 px-3 py-1.5"
+            className="text-xs font-semibold text-gray-400 hover:text-white disabled:opacity-30 px-3 py-1.5 transition-colors"
           >
             ← Previous
           </button>
@@ -122,7 +144,7 @@ export function OnboardingTutorialModal({
             {currentSlide < slides.length - 1 ? (
               <button
                 onClick={() => setCurrentSlide((prev) => prev + 1)}
-                className="bg-[#00b4d8] hover:bg-[#0096c7] text-black font-semibold text-xs px-4 py-2 rounded-lg transition-all"
+                className="btn-primary text-xs font-bold px-4 py-2 rounded-xl transition-all"
               >
                 Next Step →
               </button>
@@ -132,7 +154,7 @@ export function OnboardingTutorialModal({
                   onClose()
                   onStartTestCall()
                 }}
-                className="bg-[#00b4d8] hover:bg-[#0096c7] text-black font-bold text-xs px-5 py-2 rounded-lg shadow-lg"
+                className="btn-primary text-xs font-black px-5 py-2.5 rounded-xl shadow-[0_0_20px_rgba(0,180,216,0.4)]"
               >
                 Try It Live: Start Test Call ▶
               </button>
