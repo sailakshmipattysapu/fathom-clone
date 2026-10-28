@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { formatDuration } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -21,14 +21,13 @@ interface TranscriptViewerProps {
   onHighlightCreated?: (highlight: any) => void
 }
 
-// Assign consistent colors to speakers
 const SPEAKER_COLORS = [
-  'bg-blue-100 text-blue-700',
-  'bg-green-100 text-green-700',
-  'bg-purple-100 text-purple-700',
-  'bg-orange-100 text-orange-700',
-  'bg-pink-100 text-pink-700',
-  'bg-teal-100 text-teal-700',
+  'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+  'bg-purple-500/20 text-purple-300 border-purple-500/40',
+  'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+  'bg-amber-500/20 text-amber-300 border-amber-500/40',
+  'bg-pink-500/20 text-pink-300 border-pink-500/40',
+  'bg-blue-500/20 text-blue-300 border-blue-500/40',
 ]
 
 function getSpeakerColor(speaker: string, speakers: string[]): string {
@@ -45,6 +44,7 @@ export function TranscriptViewer({
 }: TranscriptViewerProps) {
   const activeRef = useRef<HTMLDivElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const [filterQuery, setFilterQuery] = useState('')
 
   const speakers = Array.from(new Set(segments.map((s) => s.speaker)))
 
@@ -61,7 +61,7 @@ export function TranscriptViewer({
       const elTop = el.offsetTop
       const containerScrollTop = container.scrollTop
       const containerHeight = container.clientHeight
-      if (elTop < containerScrollTop || elTop > containerScrollTop + containerHeight - 100) {
+      if (elTop < containerScrollTop || elTop > containerScrollTop + containerHeight - 120) {
         container.scrollTo({ top: elTop - 80, behavior: 'smooth' })
       }
     }
@@ -82,7 +82,7 @@ export function TranscriptViewer({
       if (res.ok) {
         const highlight = await res.json()
         onHighlightCreated?.(highlight)
-        toast.success('Highlight saved!')
+        toast.success('Highlight bookmarked!')
       } else {
         toast.error('Failed to save highlight')
       }
@@ -91,9 +91,14 @@ export function TranscriptViewer({
     }
   }
 
+  const filteredSegments = segments.filter((s) =>
+    s.text.toLowerCase().includes(filterQuery.toLowerCase()) ||
+    s.speaker.toLowerCase().includes(filterQuery.toLowerCase())
+  )
+
   if (segments.length === 0) {
     return (
-      <div className="flex items-center justify-center py-16 text-center text-gray-400">
+      <div className="flex items-center justify-center py-16 text-center text-gray-500">
         <div>
           <div className="text-4xl mb-3">📋</div>
           <p className="text-sm">No transcript available for this meeting.</p>
@@ -103,9 +108,29 @@ export function TranscriptViewer({
   }
 
   return (
-    <div ref={containerRef} className="overflow-y-auto">
-      <div className="px-6 py-4 space-y-1">
-        {segments.map((seg) => {
+    <div className="flex flex-col h-full bg-[#0d1117] text-white">
+      {/* Transcript Search Filter */}
+      <div className="p-3 border-b border-[#21262d] bg-[#12161f] flex items-center gap-2">
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          value={filterQuery}
+          onChange={(e) => setFilterQuery(e.target.value)}
+          placeholder="Filter transcript by keyword or speaker..."
+          className="bg-transparent text-xs text-white placeholder-gray-500 w-full focus:outline-none"
+        />
+        {filterQuery && (
+          <button onClick={() => setFilterQuery('')} className="text-xs text-gray-400 hover:text-white">
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Segments Scroll Area */}
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
+        {filteredSegments.map((seg) => {
           const isActive = seg.id === activeSegmentId
           const speakerColor = getSpeakerColor(seg.speaker, speakers)
 
@@ -113,48 +138,53 @@ export function TranscriptViewer({
             <div
               key={seg.id}
               ref={isActive ? activeRef : null}
-              className={`transcript-segment group rounded-lg px-3 py-3 cursor-pointer hover:bg-blue-50/50 ${
-                isActive ? 'active' : ''
+              className={`transcript-segment group rounded-xl p-3 cursor-pointer transition-all ${
+                isActive
+                  ? 'bg-[#00b4d8]/10 border-l-4 border-[#00b4d8]'
+                  : 'hover:bg-[#161b22] border-l-4 border-transparent'
               }`}
               onClick={() => onSeek(seg.startTime)}
             >
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 pt-0.5">
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${speakerColor}`}
-                  >
-                    {seg.speaker[0]}
-                  </div>
+                {/* Speaker avatar initial */}
+                <div
+                  className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs font-bold flex-shrink-0 ${speakerColor}`}
+                >
+                  {seg.speaker.charAt(0)}
                 </div>
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-gray-800">{seg.speaker}</span>
+                    <span className="text-xs font-bold text-gray-200">{seg.speaker}</span>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         onSeek(seg.startTime)
                       }}
-                      className="text-xs text-gray-400 hover:text-blue-500 font-mono transition-colors"
+                      className="text-[11px] text-[#00b4d8] hover:underline font-mono"
                     >
-                      {formatDuration(seg.startTime)}
+                      {formatDuration(Math.floor(seg.startTime))}
                     </button>
                   </div>
-                  <p className={`text-sm leading-relaxed ${isActive ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                  <p
+                    className={`text-xs leading-relaxed ${
+                      isActive ? 'text-white font-medium' : 'text-gray-300'
+                    }`}
+                  >
                     {seg.text}
                   </p>
                 </div>
-                {/* Highlight button */}
+
+                {/* Star Highlight Button */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
                     handleHighlight(seg)
                   }}
-                  title="Save as highlight"
-                  className="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 transition-colors opacity-0 group-hover:opacity-100"
+                  title="Bookmark moment"
+                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-amber-400 p-1.5 transition-opacity"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
+                  ⭐️
                 </button>
               </div>
             </div>

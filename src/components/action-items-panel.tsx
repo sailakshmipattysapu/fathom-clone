@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 interface ActionItem {
   id: string
@@ -14,23 +14,11 @@ interface ActionItemsPanelProps {
   onToggle: (id: string, completed: boolean) => void
 }
 
-const ASSIGNEE_COLORS = [
-  'bg-blue-100 text-blue-700',
-  'bg-green-100 text-green-700',
-  'bg-purple-100 text-purple-700',
-  'bg-orange-100 text-orange-700',
-  'bg-pink-100 text-pink-700',
-]
-
-function getAssigneeColor(assignee: string, assignees: string[]): string {
-  const idx = assignees.indexOf(assignee)
-  return ASSIGNEE_COLORS[idx % ASSIGNEE_COLORS.length]
-}
-
 export function ActionItemsPanel({ items, onToggle }: ActionItemsPanelProps) {
   const [localItems, setLocalItems] = useState(items)
+  const [newText, setNewText] = useState('')
+  const [newAssignee, setNewAssignee] = useState('')
 
-  const uniqueAssignees = Array.from(new Set(items.filter((i) => i.assignee).map((i) => i.assignee as string)))
   const completedCount = localItems.filter((i) => i.completed).length
 
   function handleToggle(id: string) {
@@ -43,132 +31,102 @@ export function ActionItemsPanel({ items, onToggle }: ActionItemsPanelProps) {
     onToggle(id, newCompleted)
   }
 
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-12">
-        <div className="text-4xl mb-3">✅</div>
-        <h3 className="font-semibold text-gray-900 mb-1">No action items</h3>
-        <p className="text-sm text-gray-500">No action items were found in this meeting.</p>
-      </div>
-    )
+  function handleAddItem(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newText.trim()) return
+
+    const newItem: ActionItem = {
+      id: Date.now().toString(),
+      text: newText,
+      assignee: newAssignee || 'You',
+      completed: false,
+    }
+
+    setLocalItems((prev) => [newItem, ...prev])
+    setNewText('')
+    setNewAssignee('')
   }
 
   return (
-    <div>
+    <div className="space-y-6 text-white text-xs">
       {/* Progress */}
-      {items.length > 0 && (
-        <div className="mb-5">
-          <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
-            <span>{completedCount} of {localItems.length} completed</span>
-            <span>{Math.round((completedCount / localItems.length) * 100)}%</span>
-          </div>
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-green-500 rounded-full transition-all duration-500"
-              style={{ width: `${(completedCount / localItems.length) * 100}%` }}
-            />
-          </div>
+      <div>
+        <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5 font-medium">
+          <span>{completedCount} of {localItems.length} completed</span>
+          <span className="text-[#00b4d8] font-mono">
+            {localItems.length > 0 ? Math.round((completedCount / localItems.length) * 100) : 0}%
+          </span>
         </div>
-      )}
-
-      {/* Group by assignee */}
-      {uniqueAssignees.length > 0 ? (
-        <div className="space-y-6">
-          {uniqueAssignees.map((assignee) => {
-            const assigneeItems = localItems.filter((i) => i.assignee === assignee)
-            const color = getAssigneeColor(assignee, uniqueAssignees)
-            return (
-              <div key={assignee}>
-                <div className={`inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-3 ${color}`}>
-                  <span>{assignee[0]}</span>
-                  <span>{assignee}</span>
-                </div>
-                <ul className="space-y-2">
-                  {assigneeItems.map((item) => (
-                    <li key={item.id}>
-                      <label className="flex items-start gap-3 cursor-pointer group">
-                        <div className="mt-0.5 flex-shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={item.completed}
-                            onChange={() => handleToggle(item.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                          />
-                        </div>
-                        <span
-                          className={`text-sm leading-relaxed flex-1 ${
-                            item.completed ? 'line-through text-gray-400' : 'text-gray-700 group-hover:text-gray-900'
-                          }`}
-                        >
-                          {item.text}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )
-          })}
-
-          {/* Unassigned */}
-          {localItems.filter((i) => !i.assignee).length > 0 && (
-            <div>
-              <div className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full mb-3 bg-gray-100 text-gray-600">
-                Unassigned
-              </div>
-              <ul className="space-y-2">
-                {localItems
-                  .filter((i) => !i.assignee)
-                  .map((item) => (
-                    <li key={item.id}>
-                      <label className="flex items-start gap-3 cursor-pointer group">
-                        <div className="mt-0.5 flex-shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={item.completed}
-                            onChange={() => handleToggle(item.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                          />
-                        </div>
-                        <span
-                          className={`text-sm leading-relaxed flex-1 ${
-                            item.completed ? 'line-through text-gray-400' : 'text-gray-700 group-hover:text-gray-900'
-                          }`}
-                        >
-                          {item.text}
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          )}
+        <div className="h-1.5 bg-[#21262d] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[#00b4d8] rounded-full transition-all duration-300"
+            style={{ width: `${localItems.length > 0 ? (completedCount / localItems.length) * 100 : 0}%` }}
+          />
         </div>
-      ) : (
-        <ul className="space-y-3">
-          {localItems.map((item) => (
-            <li key={item.id}>
-              <label className="flex items-start gap-3 cursor-pointer group">
-                <div className="mt-0.5 flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={item.completed}
-                    onChange={() => handleToggle(item.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                  />
-                </div>
+      </div>
+
+      {/* Add New Item Input */}
+      <form onSubmit={handleAddItem} className="flex gap-2">
+        <input
+          type="text"
+          value={newText}
+          onChange={(e) => setNewText(e.target.value)}
+          placeholder="+ Add new action item..."
+          className="flex-1 bg-[#0d1117] border border-[#21262d] focus:border-[#00b4d8] rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none"
+        />
+        <input
+          type="text"
+          value={newAssignee}
+          onChange={(e) => setNewAssignee(e.target.value)}
+          placeholder="Assignee (e.g. Priya)"
+          className="w-32 bg-[#0d1117] border border-[#21262d] focus:border-[#00b4d8] rounded-lg px-2.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="bg-[#00b4d8] text-black font-bold px-3 py-2 rounded-lg text-xs hover:bg-[#0096c7]"
+        >
+          Add
+        </button>
+      </form>
+
+      {/* Items List */}
+      <ul className="space-y-2.5">
+        {localItems.map((item) => (
+          <li
+            key={item.id}
+            className={`p-3 rounded-xl border transition-all ${
+              item.completed
+                ? 'bg-[#0d1117]/60 border-[#21262d] opacity-60'
+                : 'bg-[#0d1117] border-[#21262d] hover:border-[#30363d]'
+            }`}
+          >
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={item.completed}
+                onChange={() => handleToggle(item.id)}
+                className="w-4 h-4 rounded bg-[#161b22] border-[#30363d] text-[#00b4d8] mt-0.5 focus:ring-0 cursor-pointer"
+              />
+              <div className="flex-1 min-w-0">
                 <span
-                  className={`text-sm leading-relaxed ${
-                    item.completed ? 'line-through text-gray-400' : 'text-gray-700 group-hover:text-gray-900'
+                  className={`text-xs leading-relaxed block ${
+                    item.completed ? 'line-through text-gray-500' : 'text-gray-200'
                   }`}
                 >
                   {item.text}
                 </span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      )}
+
+                {item.assignee && (
+                  <span className="inline-flex items-center gap-1.5 mt-2 text-[10px] bg-[#161b22] border border-[#30363d] text-[#00b4d8] px-2 py-0.5 rounded-full font-medium">
+                    <span>👤</span>
+                    <span>{item.assignee}</span>
+                  </span>
+                )}
+              </div>
+            </label>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
