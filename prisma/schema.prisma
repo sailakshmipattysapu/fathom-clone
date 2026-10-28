@@ -1,0 +1,158 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  meetings      Meeting[]
+  calendarConnected Boolean @default(false)
+  calendarEmail    String?
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  duration    Int      // in seconds
+  platform    String   // "zoom" | "meet" | "teams"
+  status      String   @default("completed") // "recording" | "processing" | "completed"
+  videoUrl    String?
+  thumbnailUrl String?
+  attendees   Json     // array of { name, email, avatarUrl }
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transcript  TranscriptSegment[]
+  summary     MeetingSummary?
+  highlights  Highlight[]
+  actionItems ActionItem[]
+  shares      SharedClip[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model TranscriptSegment {
+  id        String  @id @default(cuid())
+  meetingId String
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  speaker   String
+  text      String  @db.Text
+  startTime Float   // seconds from start
+  endTime   Float
+  order     Int
+
+  createdAt DateTime @default(now())
+}
+
+model MeetingSummary {
+  id          String  @id @default(cuid())
+  meetingId   String  @unique
+  meeting     Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  template    String  @default("general") // "general" | "sales" | "engineering" | "1on1"
+  overview    String  @db.Text
+  keyPoints   Json    // string[]
+  decisions   Json    // string[]
+  nextSteps   Json    // string[]
+  rawContent  String  @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ActionItem {
+  id          String   @id @default(cuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  text        String
+  assignee    String?
+  dueDate     DateTime?
+  completed   Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+}
+
+model Highlight {
+  id          String   @id @default(cuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  title       String
+  startTime   Float
+  endTime     Float
+  note        String?
+  createdBy   String?
+
+  createdAt   DateTime @default(now())
+}
+
+model SharedClip {
+  id          String   @id @default(cuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  token       String   @unique @default(cuid())
+  title       String
+  startTime   Float
+  endTime     Float
+  views       Int      @default(0)
+  expiresAt   DateTime?
+
+  createdAt   DateTime @default(now())
+}
